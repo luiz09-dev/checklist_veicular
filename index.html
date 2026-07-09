@@ -324,7 +324,7 @@
       </div>
       <div class="field full">
         <label>Veículo / Placa</label>
-        <select id="fPlaca" data-mono></select>
+        <select id="fPlaca"></select>
       </div>
       <div class="field">
         <label>Condutor</label>
@@ -823,12 +823,30 @@
 
     const btn = $('submitBtn');
     btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    // O envio à planilha precisa ser disparado ANTES do PDF: em navegadores
+    // mobile, abrir/baixar o PDF pode navegar a página, cancelando qualquer
+    // requisição de rede ainda pendente. sendBeacon() é feito para sobreviver
+    // a essa navegação; fetch() é usado apenas como reserva (fallback).
+    let webhookError = null;
+    if(webhookUrl){
+      try{
+        const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain;charset=utf-8' });
+        const enfileirado = navigator.sendBeacon && navigator.sendBeacon(webhookUrl, blob);
+        if(!enfileirado){
+          await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+        }
+      }catch(err){ webhookError = err; }
+    }
+
     btn.textContent = 'Gerando PDF...';
 
-    // O PDF precisa ser disparado ANTES de qualquer "await": muitos navegadores
-    // (principalmente em celular) só permitem downloads iniciados no mesmo
-    // instante do clique do usuário. Se esperarmos a rede primeiro, o download
-    // pode ser bloqueado silenciosamente.
     let pdfError = null;
     try{
       if(typeof window.jspdf === 'undefined'){
@@ -836,20 +854,6 @@
       }
       generatePDF(payload);
     }catch(err){ pdfError = err; console.error('Erro ao gerar PDF:', err); }
-
-    btn.textContent = 'Enviando...';
-    let webhookError = null;
-
-    if(webhookUrl){
-      try{
-        await fetch(webhookUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-      }catch(err){ webhookError = err; }
-    }
 
     try{
       // backup local (cópia extra dentro do artifact); falha aqui não é crítica
