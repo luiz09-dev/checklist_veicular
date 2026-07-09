@@ -151,11 +151,7 @@
   input:focus, select:focus, textarea:focus{ border-color: var(--teal); background:#fff; }
   input[data-mono], select[data-mono]{ font-family:'JetBrains Mono'; font-weight:600; letter-spacing:0.03em; }
   .date-wrap{ position:relative; }
-  .date-wrap input#fDataDisplay{ cursor:pointer; pointer-events:none; }
-  .date-wrap input.date-hidden{
-    position:absolute; inset:0; width:100%; height:100%;
-    opacity:0; cursor:pointer; padding:0; border:none;
-  }
+  .date-wrap input#fData{ cursor:pointer; }
   select{ appearance:none; -webkit-appearance:none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235B655F' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
     background-repeat:no-repeat; background-position: right 10px center; padding-right:32px;
@@ -319,8 +315,7 @@
       <div class="field">
         <label>Data</label>
         <div class="date-wrap">
-          <input type="text" id="fDataDisplay" placeholder="Selecionar Data" readonly data-mono>
-          <input type="date" id="fData" class="date-hidden" aria-label="Data">
+          <input type="date" id="fData" aria-label="Data" data-mono>
         </div>
       </div>
       <div class="field">
@@ -462,7 +457,7 @@
 
   let veiculos = DEFAULT_VEICULOS.slice();
   let usuarios = DEFAULT_USUARIOS.slice();
-  let webhookUrl = '';
+  let webhookUrl = 'https://script.google.com/macros/s/AKfycbynlUBoFzWaL4Dyt1Kk_UpZlbf2xb9ghgd3zxDBBpGTnq6buLj_vOrwVNYGgosYao5QLw/exec';
   let currentType = 'diario';
   let checkedState = {}; // { itemName: {checked:bool, obs:string} }
 
@@ -766,7 +761,6 @@
     $('fKm').value = '';
     $('fObs').value = '';
     $('fData').value = '';
-    $('fDataDisplay').value = '';
     $('fPlaca').value = '';
     $('fResponsavel').value = '';
     $('fRevisor').value = '';
@@ -870,7 +864,6 @@
       $('fKm').value = '';
       $('fObs').value = '';
       $('fData').value = '';
-      $('fDataDisplay').value = '';
       $('fPlaca').value = '';
       $('fResponsavel').value = '';
       $('fRevisor').value = '';
@@ -969,18 +962,6 @@
   }
 
   // ---------- INIT ----------
-  function formatDataBR(iso){
-    if(!iso) return '';
-    const [y,m,d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  }
-  $('fData').addEventListener('change', () => {
-    $('fDataDisplay').value = formatDataBR($('fData').value);
-  });
-  $('fDataDisplay').addEventListener('click', () => {
-    if(typeof $('fData').showPicker === 'function'){ $('fData').showPicker(); }
-    else { $('fData').focus(); }
-  });
   $('fKm').addEventListener('input', () => {
     const digits = $('fKm').value.replace(/\D/g, '');
     $('fKm').value = digits ? Number(digits).toLocaleString('pt-BR') : '';
