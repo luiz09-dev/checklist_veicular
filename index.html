@@ -151,11 +151,10 @@
   input:focus, select:focus, textarea:focus{ border-color: var(--teal); background:#fff; }
   input[data-mono], select[data-mono]{ font-family:'JetBrains Mono'; font-weight:600; letter-spacing:0.03em; }
   .date-wrap{ position:relative; }
-  .date-wrap input#fDataDisplay{ cursor:pointer; }
+  .date-wrap input#fDataDisplay{ cursor:pointer; pointer-events:none; }
   .date-wrap input.date-hidden{
     position:absolute; inset:0; width:100%; height:100%;
     opacity:0; cursor:pointer; padding:0; border:none;
-    pointer-events:none;
   }
   select{ appearance:none; -webkit-appearance:none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235B655F' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
