@@ -150,6 +150,13 @@
   }
   input:focus, select:focus, textarea:focus{ border-color: var(--teal); background:#fff; }
   input[data-mono], select[data-mono]{ font-family:'JetBrains Mono'; font-weight:600; letter-spacing:0.03em; }
+  .date-wrap{ position:relative; }
+  .date-wrap input#fDataDisplay{ cursor:pointer; }
+  .date-wrap input.date-hidden{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0; cursor:pointer; padding:0; border:none;
+    pointer-events:none;
+  }
   select{ appearance:none; -webkit-appearance:none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235B655F' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
     background-repeat:no-repeat; background-position: right 10px center; padding-right:32px;
@@ -178,16 +185,17 @@
   .item:hover{ border-color: #c3cabd; }
   .item.checked{ background: var(--red-soft); border-color: #e3b3a8; }
   .item input[type=checkbox]{
-    appearance:none; -webkit-appearance:none; width:19px; height:19px; flex-shrink:0;
-    border:2px solid #B7BEB2; border-radius:6px; margin-top:1px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; background:#fff;
+    appearance:none; -webkit-appearance:none; width:20px; height:20px; flex-shrink:0;
+    border:2px solid var(--green); border-radius:6px; margin-top:1px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; background:#EAF4EC;
+    font-size:13px; font-weight:800; color: var(--green);
   }
-  .item input[type=checkbox]:checked{ background: var(--red); border-color: var(--red); }
-  .item input[type=checkbox]:checked::after{
-    content:''; width:9px; height:5px; border-left:2px solid #fff; border-bottom:2px solid #fff;
-    transform: rotate(-45deg) translate(1px,-1px);
-  }
+  .item input[type=checkbox]::after{ content:'✓'; line-height:1; }
+  .item input[type=checkbox]:checked{ background: var(--red); border-color: var(--red); color:#fff; }
+  .item input[type=checkbox]:checked::after{ content:'✕'; }
   .item-label{ font-size:13.5px; font-weight:500; line-height:1.3; padding-top:1px; }
+  .item-status{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--green); margin-top:1px; }
+  .item.checked .item-status{ color:var(--red); }
   .item-obs{
     grid-column: 1/-1; margin-top:-2px;
   }
@@ -213,13 +221,20 @@
 
   /* ---------- TOAST ---------- */
   .toast{
-    position:fixed; left:50%; bottom:24px; transform: translateX(-50%) translateY(120%);
+    position:fixed; left:50%; bottom:24px;
+    transform: translateX(-50%) translateY(12px);
+    opacity:0; visibility:hidden; pointer-events:none;
     background: var(--teal-dark); color:#fff; padding:13px 20px; border-radius:11px;
     font-size:14px; font-weight:600; box-shadow: var(--shadow); z-index:200;
-    display:flex; align-items:center; gap:10px; transition: transform .3s cubic-bezier(.2,.9,.3,1.2);
-    max-width: 90vw;
+    display:flex; align-items:center; gap:10px;
+    transition: opacity .22s ease, transform .22s ease, visibility 0s linear .22s;
+    max-width: 90vw; text-align:center; line-height:1.4;
   }
-  .toast.show{ transform: translateX(-50%) translateY(0); }
+  .toast.show{
+    opacity:1; visibility:visible; pointer-events:auto;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity .22s ease, transform .22s ease, visibility 0s linear 0s;
+  }
   .toast.error{ background: var(--red); }
   .toast.ok{ background: var(--green); }
 
@@ -261,6 +276,8 @@
   .footer-note{ text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:22px; line-height:1.6; }
 </style>
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <body>
 <div class="wrap">
 
@@ -302,22 +319,25 @@
     <div class="grid">
       <div class="field">
         <label>Data</label>
-        <input type="date" id="fData" data-mono>
+        <div class="date-wrap">
+          <input type="text" id="fDataDisplay" placeholder="Selecionar Data" readonly data-mono>
+          <input type="date" id="fData" class="date-hidden" aria-label="Data">
+        </div>
       </div>
       <div class="field">
-        <label>KM</label>
-        <input type="number" id="fKm" placeholder="Ex: 84520" data-mono inputmode="numeric">
+        <label>Quilometragem</label>
+        <input type="text" id="fKm" placeholder="Ex: 84.520" data-mono inputmode="numeric">
       </div>
       <div class="field full">
         <label>Veículo / Placa</label>
         <select id="fPlaca" data-mono></select>
       </div>
       <div class="field">
-        <label>Técnico responsável</label>
+        <label>Condutor</label>
         <select id="fResponsavel"></select>
       </div>
       <div class="field">
-        <label>Técnico revisor <span style="text-transform:none;font-weight:500;">(opcional)</span></label>
+        <label>Revisor</label>
         <select id="fRevisor"><option value="">—</option></select>
       </div>
     </div>
@@ -325,7 +345,7 @@
 
   <div class="card">
     <h2 class="card-title"><span class="n">2</span><span id="checklistTitle">Itens do checklist diário</span></h2>
-    <p class="hint" style="margin:-6px 0 14px;">Marque apenas os itens que apresentaram problema. Os demais são considerados OK.</p>
+    <p class="hint" style="margin:-6px 0 14px;">Todo item começa como <strong style="color:var(--green);">✓ OK</strong>. Toque no item que apresentou problema para marcá-lo como <strong style="color:var(--red);">✕ Problema</strong>.</p>
     <div id="groupsWrap"></div>
   </div>
 
@@ -336,6 +356,7 @@
 
   <div class="submit-row">
     <button class="btn btn-ghost" id="clearBtn">Limpar</button>
+    <button class="btn btn-ghost" id="pdfOnlyBtn" title="Gera o PDF sem enviar à planilha">PDF</button>
     <button class="btn btn-primary" id="submitBtn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
       Enviar checklist
@@ -381,11 +402,23 @@
         <label>URL do Google Apps Script (Web App)</label>
         <input id="webhookUrl" placeholder="https://script.google.com/macros/s/.../exec" data-mono>
       </div>
+      <div id="whUnsaved" style="display:none; font-size:12px; color:var(--red); font-weight:700; margin-top:6px;">⚠ Você digitou uma URL mas ainda não salvou. Clique em "Salvar URL" abaixo.</div>
       <div class="webhook-box">
         <div style="margin-bottom:8px;"><span class="status-dot" id="whDot"></span><strong id="whStatus" style="font-size:13px;">Não configurado</strong></div>
         Cole aqui a URL do Web App do Google Apps Script publicado na planilha da equipe. Cada envio do checklist grava uma nova linha automaticamente. Veja o arquivo <code>Code.gs</code> com o passo a passo de instalação.
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">
+          Checklist rápido se não estiver funcionando:<br>
+          1. A implantação foi feita como <strong>App da Web</strong> (URL termina em <code>/exec</code>)?<br>
+          2. Em "Quem pode acessar" está como <strong>Qualquer pessoa</strong>?<br>
+          3. Depois de colar a URL, você clicou em <strong>Salvar URL</strong> abaixo?<br>
+          4. Se editou o script depois de implantar, foi criada uma <strong>nova versão</strong> em "Gerenciar implantações"?
+        </div>
       </div>
-      <button class="btn btn-ghost" id="saveWebhook" style="margin-top:12px;width:100%;">Salvar URL</button>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-ghost" id="saveWebhook" style="flex:1;">Salvar URL</button>
+        <button class="btn btn-ghost" id="testWebhook" style="flex:1;">Enviar teste</button>
+      </div>
+      <div id="testResult" style="font-size:12.5px; color:var(--ink-soft); margin-top:8px; display:none;"></div>
     </div>
   </div>
 </div>
@@ -404,7 +437,7 @@
   ];
   const DEFAULT_USUARIOS = [
     'Denis Soares','Ilan Cruz','Luiz Sousa','Paulo Gomes','Diego Batista',
-    'Marcos Ferreira','Davi Reis','Alteir Souza','Sérgio Éber','Marcone Pereira','Leandro'
+    'Marcos Ferreira','Davi Reis','Alteir Souza','Sérgio Éber','Marcone Pereira','Leandro Pereira'
   ];
 
   const CHECKLIST = {
@@ -436,51 +469,77 @@
 
   const $ = (id) => document.getElementById(id);
 
-  // ---------- STORAGE ----------
+  // ---------- STORAGE (híbrido: window.storage dentro do Claude.ai, localStorage fora) ----------
+  const hasClaudeStorage = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
+
+  async function storageGet(key, shared){
+    if(hasClaudeStorage){
+      try{ return await window.storage.get(key, shared); }
+      catch(e){ return null; } // chave inexistente lança erro nessa API — tratado como "sem valor"
+    }
+    try{
+      const raw = localStorage.getItem(key);
+      return raw !== null ? { key, value: raw, shared } : null;
+    }catch(e){ return null; }
+  }
+  async function storageSet(key, value, shared){
+    if(hasClaudeStorage){
+      return await window.storage.set(key, value, shared);
+    }
+    localStorage.setItem(key, value);
+    return { key, value, shared };
+  }
+
+  // ---------- CARREGAR / SALVAR ----------
   async function loadAll(){
     try{
-      const v = await window.storage.get('frota:vehicles', true);
+      const v = await storageGet('frota:vehicles', true);
       if(v && v.value) veiculos = JSON.parse(v.value);
-    }catch(e){}
+    }catch(e){ console.warn('Falha ao carregar veículos:', e); }
     try{
-      const u = await window.storage.get('frota:users', true);
+      const u = await storageGet('frota:users', true);
       if(u && u.value) usuarios = JSON.parse(u.value);
-    }catch(e){}
+    }catch(e){ console.warn('Falha ao carregar usuários:', e); }
     try{
-      const w = await window.storage.get('frota:webhook', true);
+      const w = await storageGet('frota:webhook', true);
       if(w && w.value) webhookUrl = w.value;
-    }catch(e){}
+    }catch(e){ console.warn('Falha ao carregar URL de integração:', e); }
     renderVeiculoSelect();
     renderUsuarioSelects();
     renderVeiculosList();
     renderUsuariosList();
     renderWebhook();
+    if(!hasClaudeStorage){
+      showToast('Modo local: veículos, usuários e a URL da planilha ficam salvos apenas neste navegador.', 'ok');
+    }
   }
   async function saveVeiculos(){
-    await window.storage.set('frota:vehicles', JSON.stringify(veiculos), true);
+    try{ await storageSet('frota:vehicles', JSON.stringify(veiculos), true); }
+    catch(e){ console.error(e); showToast('Não foi possível salvar a lista de veículos: ' + e.message, 'error'); }
   }
   async function saveUsuarios(){
-    await window.storage.set('frota:users', JSON.stringify(usuarios), true);
+    try{ await storageSet('frota:users', JSON.stringify(usuarios), true); }
+    catch(e){ console.error(e); showToast('Não foi possível salvar a lista de usuários: ' + e.message, 'error'); }
   }
   async function saveWebhookUrl(){
-    await window.storage.set('frota:webhook', webhookUrl, true);
+    await storageSet('frota:webhook', webhookUrl, true);
   }
 
   // ---------- RENDER: SELECTS ----------
   function renderVeiculoSelect(){
     const sel = $('fPlaca');
     const cur = sel.value;
-    sel.innerHTML = veiculos.map(v => `<option value="${v.placa}">${v.placa} — ${v.modelo}</option>`).join('');
-    if(cur) sel.value = cur;
+    sel.innerHTML = '<option value="">Selecionar Veículo</option>' + veiculos.map(v => `<option value="${v.placa}">${v.placa} — ${v.modelo}</option>`).join('');
+    sel.value = cur || '';
   }
   function renderUsuarioSelects(){
     const opts = usuarios.map(u => `<option value="${u}">${u}</option>`).join('');
     const r = $('fResponsavel'), rv = $('fRevisor');
     const curR = r.value, curV = rv.value;
-    r.innerHTML = opts;
-    rv.innerHTML = '<option value="">—</option>' + opts;
-    if(curR) r.value = curR;
-    if(curV) rv.value = curV;
+    r.innerHTML = '<option value="">Selecionar Condutor</option>' + opts;
+    rv.innerHTML = '<option value="">Selecionar Revisor</option>' + opts;
+    r.value = curR || '';
+    rv.value = curV || '';
   }
 
   // ---------- RENDER: CHECKLIST ----------
@@ -503,11 +562,16 @@
         row.className = 'item';
         row.dataset.key = key;
         row.innerHTML = `<input type="checkbox">
-          <span class="item-label">${name}</span>`;
+          <span style="flex:1;">
+            <span class="item-label">${name}</span><br>
+            <span class="item-status">OK</span>
+          </span>`;
         const cb = row.querySelector('input');
+        const statusEl = row.querySelector('.item-status');
         cb.addEventListener('change', () => {
           checkedState[key].checked = cb.checked;
           row.classList.toggle('checked', cb.checked);
+          statusEl.textContent = cb.checked ? 'Problema' : 'OK';
           toggleObsField(row, key, cb.checked);
           updateGauge();
         });
@@ -634,12 +698,57 @@
     const ok = !!webhookUrl;
     $('whDot').className = 'status-dot ' + (ok ? 'on' : 'off');
     $('whStatus').textContent = ok ? 'Conectado à planilha' : 'Não configurado';
+    $('whUnsaved').style.display = 'none';
   }
+  $('webhookUrl').addEventListener('input', () => {
+    const typed = $('webhookUrl').value.trim();
+    $('whUnsaved').style.display = (typed && typed !== webhookUrl) ? 'block' : 'none';
+  });
   $('saveWebhook').addEventListener('click', async () => {
     webhookUrl = $('webhookUrl').value.trim();
     await saveWebhookUrl();
     renderWebhook();
     showToast('URL de integração salva', 'ok');
+  });
+  $('testWebhook').addEventListener('click', async () => {
+    const urlToTest = $('webhookUrl').value.trim();
+    const resultBox = $('testResult');
+    if(!urlToTest){
+      showToast('Cole a URL do Apps Script antes de testar', 'error');
+      return;
+    }
+    const btn = $('testWebhook');
+    btn.disabled = true;
+    btn.textContent = 'Enviando teste...';
+    resultBox.style.display = 'block';
+    resultBox.textContent = 'Enviando linha de teste...';
+    try{
+      await fetch(urlToTest, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          data: new Date().toISOString().slice(0,10),
+          placa: 'TESTE',
+          veiculo: 'Teste de conexão',
+          km: 0,
+          responsavel: 'Sistema',
+          revisor: '',
+          tipo: 'Teste',
+          itensProblema: 'Nenhum',
+          totalItens: 0,
+          totalProblemas: 0,
+          observacoes: 'Envio de teste feito pelo painel de Integração.',
+          timestamp: new Date().toISOString()
+        })
+      });
+      resultBox.innerHTML = '✅ Requisição enviada sem erros de rede. Como o navegador não permite ler a resposta do Apps Script, isso <strong>não garante</strong> que a linha foi gravada — abra a planilha agora e confira se apareceu uma linha com placa "TESTE" na aba "Respostas". Se não aparecer, revise os passos do checklist acima (principalmente o item 2: acesso "Qualquer pessoa").';
+    }catch(err){
+      resultBox.innerHTML = '❌ O navegador bloqueou a requisição antes mesmo de sair (' + err.message + '). Confira se a URL foi colada corretamente e termina em <code>/exec</code>.';
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Enviar teste';
+    }
   });
 
   // ---------- TOAST ----------
@@ -649,7 +758,7 @@
     t.textContent = msg;
     t.className = 'toast show' + (type ? ' ' + type : '');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+    toastTimer = setTimeout(() => t.classList.remove('show'), type === 'error' ? 6500 : 3200);
   }
 
   // ---------- SUBMIT ----------
@@ -657,27 +766,39 @@
     renderChecklist();
     $('fKm').value = '';
     $('fObs').value = '';
+    $('fData').value = '';
+    $('fDataDisplay').value = '';
+    $('fPlaca').value = '';
+    $('fResponsavel').value = '';
+    $('fRevisor').value = '';
     showToast('Checklist limpo');
   });
 
-  $('submitBtn').addEventListener('click', async () => {
+  function buildPayloadOrNull(){
     const placa = $('fPlaca').value;
     const veiculo = (veiculos.find(v => v.placa === placa) || {}).modelo || '';
-    const km = $('fKm').value;
+    const km = $('fKm').value.replace(/\./g, '');
     const responsavel = $('fResponsavel').value;
     const revisor = $('fRevisor').value;
     const data = $('fData').value;
     const obsGerais = $('fObs').value;
 
-    if(!placa || !responsavel || !data || !km){
-      showToast('Preencha data, KM, placa e responsável', 'error');
-      return;
+    const faltando = [];
+    if(!data) faltando.push('data');
+    if(!km) faltando.push('KM');
+    if(!placa) faltando.push('veículo/placa');
+    if(!responsavel) faltando.push('condutor');
+    if(!revisor) faltando.push('revisor');
+
+    if(faltando.length){
+      showToast('Preencha: ' + faltando.join(', '), 'error');
+      return null;
     }
 
     const problemas = Object.values(checkedState).filter(v => v.checked);
     const itensProblemaTexto = problemas.map(p => p.obs ? `${p.label} (${p.obs})` : p.label).join('; ');
 
-    const payload = {
+    return {
       data, placa, veiculo, km, responsavel, revisor,
       tipo: currentType === 'diario' ? 'Diário' : 'Semanal',
       itensProblema: itensProblemaTexto || 'Nenhum',
@@ -686,44 +807,186 @@
       observacoes: obsGerais,
       timestamp: new Date().toISOString()
     };
+  }
+
+  $('pdfOnlyBtn').addEventListener('click', () => {
+    const payload = buildPayloadOrNull();
+    if(!payload) return;
+    try{
+      if(typeof window.jspdf === 'undefined'){
+        throw new Error('Biblioteca de PDF não carregou (verifique a conexão com a internet e recarregue a página)');
+      }
+      generatePDF(payload);
+      showToast('PDF gerado (envio à planilha não foi feito neste botão)', 'ok');
+    }catch(err){
+      console.error('Erro ao gerar PDF:', err);
+      showToast('Falha ao gerar PDF: ' + err.message, 'error');
+    }
+  });
+
+  $('submitBtn').addEventListener('click', async () => {
+    const payload = buildPayloadOrNull();
+    if(!payload) return;
 
     const btn = $('submitBtn');
     btn.disabled = true;
-    btn.textContent = 'Enviando...';
+    btn.textContent = 'Gerando PDF...';
 
+    // O PDF precisa ser disparado ANTES de qualquer "await": muitos navegadores
+    // (principalmente em celular) só permitem downloads iniciados no mesmo
+    // instante do clique do usuário. Se esperarmos a rede primeiro, o download
+    // pode ser bloqueado silenciosamente.
+    let pdfError = null;
     try{
-      if(webhookUrl){
+      if(typeof window.jspdf === 'undefined'){
+        throw new Error('Biblioteca de PDF não carregou (verifique a conexão com a internet e recarregue a página)');
+      }
+      generatePDF(payload);
+    }catch(err){ pdfError = err; console.error('Erro ao gerar PDF:', err); }
+
+    btn.textContent = 'Enviando...';
+    let webhookError = null;
+
+    if(webhookUrl){
+      try{
         await fetch(webhookUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
-      }
-      // backup local (visível para a equipe) mesmo com a integração configurada
-      const key = 'frota:sub:' + Date.now();
-      await window.storage.set(key, JSON.stringify(payload), true);
+      }catch(err){ webhookError = err; }
+    }
 
-      showToast(webhookUrl ? 'Checklist enviado para a planilha ✓' : 'Checklist salvo (configure a integração para enviar ao Sheets)', 'ok');
+    try{
+      // backup local (cópia extra dentro do artifact); falha aqui não é crítica
+      // pois o registro oficial é a planilha do Google Sheets.
+      const key = 'frota:sub:' + Date.now();
+      await storageSet(key, JSON.stringify(payload), true);
+    }catch(err){ console.warn('Backup local falhou (não crítico):', err); }
+
+    if(!webhookError && !pdfError){
+      showToast(webhookUrl ? 'Checklist enviado à planilha e PDF gerado ✓' : 'Checklist salvo e PDF gerado (configure a integração para enviar ao Sheets)', 'ok');
       renderChecklist();
       $('fKm').value = '';
       $('fObs').value = '';
-    }catch(err){
-      showToast('Falha ao enviar. Tente novamente.', 'error');
-    }finally{
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Enviar checklist`;
+      $('fData').value = '';
+      $('fDataDisplay').value = '';
+      $('fPlaca').value = '';
+      $('fResponsavel').value = '';
+      $('fRevisor').value = '';
+    } else {
+      const falhas = [];
+      if(webhookError) falhas.push('envio à planilha (' + webhookError.message + ')');
+      if(pdfError) falhas.push('PDF (' + pdfError.message + ')');
+      showToast('Falha em: ' + falhas.join(' | '), 'error');
     }
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Enviar checklist`;
   });
 
-  // ---------- INIT ----------
-  function initDate(){
-    const d = new Date();
-    const iso = d.toISOString().slice(0,10);
-    $('fData').value = iso;
+  // ---------- PDF ----------
+  function generatePDF(payload){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'mm', format:'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y;
+
+    doc.setFillColor(30,62,66);
+    doc.rect(0,0,pageWidth,22,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(16);
+    doc.text('CHECKLIST FROTA — SEVEN', 12, 14);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','normal');
+    doc.text(`Checklist ${payload.tipo}  •  Gerado em ${new Date().toLocaleString('pt-BR')}`, 12, 19);
+
+    y = 30;
+    doc.autoTable({
+      startY: y, theme:'grid',
+      styles:{ fontSize:9, cellPadding:2.5, textColor:20 },
+      head:[['Data','Placa','Veículo','KM','Responsável','Revisor']],
+      body:[[payload.data, payload.placa, payload.veiculo, String(payload.km), payload.responsavel, payload.revisor || '—']],
+      headStyles:{ fillColor:[47,93,98], textColor:255 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    const data = CHECKLIST[currentType];
+    data.groups.forEach(group => {
+      const rows = group.items.map((name, idx) => {
+        const key = group.name + '::' + name + '::' + idx;
+        const entry = checkedState[key] || { checked:false, obs:'' };
+        return [name, entry.checked ? 'PROBLEMA' : 'OK', entry.checked ? (entry.obs || '') : ''];
+      });
+      if(y > 258){ doc.addPage(); y = 15; }
+      doc.setFontSize(11);
+      doc.setFont('helvetica','bold');
+      doc.setTextColor(47,93,98);
+      doc.text(group.name, 12, y);
+      y += 3;
+      doc.autoTable({
+        startY: y, theme:'striped',
+        styles:{ fontSize:8.5, cellPadding:2 },
+        head:[['Item','Status','Observação']],
+        body: rows,
+        headStyles:{ fillColor:[233,236,232], textColor:20 },
+        columnStyles:{ 1:{ cellWidth:24 } },
+        didParseCell: function(d){
+          if(d.section==='body' && d.column.index===1){
+            if(d.cell.raw === 'PROBLEMA'){ d.cell.styles.textColor=[193,67,45]; d.cell.styles.fontStyle='bold'; }
+            else{ d.cell.styles.textColor=[62,122,77]; d.cell.styles.fontStyle='bold'; }
+          }
+        }
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    });
+
+    if(y > 250){ doc.addPage(); y = 15; }
+    doc.setFontSize(10.5);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(47,93,98);
+    doc.text('Observações gerais', 12, y);
+    y += 5;
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(30,30,30);
+    doc.setFontSize(9.5);
+    const obsText = (payload.observacoes && payload.observacoes.trim()) ? payload.observacoes : '—';
+    const splitObs = doc.splitTextToSize(obsText, pageWidth - 24);
+    doc.text(splitObs, 12, y);
+    y += splitObs.length * 5 + 14;
+
+    if(y > 265){ doc.addPage(); y = 20; }
+    doc.setDrawColor(180,180,180);
+    doc.line(12, y, 90, y);
+    doc.line(pageWidth-90, y, pageWidth-12, y);
+    doc.setFontSize(8.5);
+    doc.setTextColor(90,90,90);
+    doc.text('Assinatura Téc. Responsável', 12, y+4);
+    doc.text('Assinatura Téc. Revisor', pageWidth-90, y+4);
+
+    doc.save(`checklist_${payload.placa}_${payload.data}.pdf`);
   }
 
-  initDate();
+  // ---------- INIT ----------
+  function formatDataBR(iso){
+    if(!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  $('fData').addEventListener('change', () => {
+    $('fDataDisplay').value = formatDataBR($('fData').value);
+  });
+  $('fDataDisplay').addEventListener('click', () => {
+    if(typeof $('fData').showPicker === 'function'){ $('fData').showPicker(); }
+    else { $('fData').focus(); }
+  });
+  $('fKm').addEventListener('input', () => {
+    const digits = $('fKm').value.replace(/\D/g, '');
+    $('fKm').value = digits ? Number(digits).toLocaleString('pt-BR') : '';
+  });
+
   renderChecklist();
   loadAll();
 
