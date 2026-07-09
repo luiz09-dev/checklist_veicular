@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Frota</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root{
+    --bg: #E9ECE8;
+    --surface: #FFFFFF;
+    --surface-2: #F2F4F0;
+    --ink: #1B231F;
+    --ink-soft: #5B655F;
+    --line: #D6DAD3;
+    --teal: #2F5D62;
+    --teal-dark: #1E3E42;
+    --amber: #F2A900;
+    --amber-dark: #C98700;
+    --red: #C1432D;
+    --red-soft: #FBE7E2;
+    --green: #3E7A4D;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(27,35,31,0.06), 0 8px 24px -12px rgba(27,35,31,0.18);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+
+  /* ---------- HEADER ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:10px;
+    background: var(--teal-dark);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff; font-family:'Bebas Neue'; font-size:22px; letter-spacing:0.5px;
+    flex-shrink:0;
+  }
+  .brand-text h1{
+    font-family:'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.5px;
+    margin:0; line-height:1;
+    color: var(--teal-dark);
+  }
+  .brand-text p{
+    margin:2px 0 0; font-size:12px; color: var(--ink-soft); font-weight:500;
+    text-transform:uppercase; letter-spacing:0.08em;
+  }
+  .icon-btn{
+    width:40px;height:40px; border-radius:50%;
+    border:1px solid var(--line); background:var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer; color:var(--teal-dark);
+    box-shadow: var(--shadow);
+    transition: transform .15s ease, background .15s ease;
+  }
+  .icon-btn:hover{ background: var(--surface-2); transform: translateY(-1px); }
+  .icon-btn svg{width:20px;height:20px;}
+
+  /* ---------- GAUGE (signature element) ---------- */
+  .gauge-card{
+    background: var(--teal-dark);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display:flex; align-items:center; gap:18px;
+    box-shadow: var(--shadow);
+    margin-bottom:18px;
+    color:#fff;
+  }
+  .gauge{ position:relative; width:74px; height:74px; flex-shrink:0; }
+  .gauge svg{ width:100%; height:100%; transform: rotate(-90deg); }
+  .gauge-track{ fill:none; stroke: rgba(255,255,255,0.16); stroke-width:8; }
+  .gauge-fill{ fill:none; stroke: var(--amber); stroke-width:8; stroke-linecap:round;
+    transition: stroke-dashoffset .4s ease; }
+  .gauge-num{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono'; font-weight:700; font-size:16px;
+  }
+  .gauge-info{ flex:1; min-width:0; }
+  .gauge-info .label{ font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color: rgba(255,255,255,0.65); font-weight:600;}
+  .gauge-info .val{ font-family:'Bebas Neue'; font-size:22px; letter-spacing:0.4px; margin-top:2px; }
+  .gauge-info .sub{ font-size:12.5px; color: rgba(255,255,255,0.75); margin-top:2px;}
+
+  /* ---------- TABS ---------- */
+  .tabs{
+    display:flex; gap:6px; background: var(--surface-2);
+    padding:4px; border-radius: 12px; margin-bottom:18px;
+    border:1px solid var(--line);
+  }
+  .tab{
+    flex:1; text-align:center; padding:10px 8px; border-radius:9px;
+    font-weight:600; font-size:14px; cursor:pointer; color: var(--ink-soft);
+    transition: all .15s ease; user-select:none;
+  }
+  .tab.active{ background: var(--surface); color: var(--teal-dark); box-shadow: var(--shadow); }
+  .tab .tag{
+    display:inline-block; font-family:'JetBrains Mono'; font-size:10px;
+    background: var(--amber); color:#3a2900; padding:1px 6px; border-radius:5px;
+    margin-left:6px; font-weight:700; vertical-align: 2px;
+  }
+
+  /* ---------- FORM CARD ---------- */
+  .card{
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border:1px solid var(--line);
+    margin-bottom:16px;
+  }
+  .card-title{
+    font-family:'Bebas Neue'; letter-spacing:0.4px; font-size:17px; color:var(--teal-dark);
+    margin:0 0 12px; display:flex; align-items:center; gap:8px;
+  }
+  .card-title .n{
+    width:22px;height:22px;border-radius:50%; background:var(--teal); color:#fff;
+    font-family:'JetBrains Mono'; font-size:11px; display:flex; align-items:center; justify-content:center;
+  }
+  .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field.full{ grid-column: 1 / -1; }
+  label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: var(--ink-soft); }
+  input, select, textarea{
+    font-family:'Inter'; font-size:14.5px; color:var(--ink);
+    border:1.5px solid var(--line); border-radius:9px; padding:10px 12px;
+    background: var(--surface-2); outline:none;
+    transition: border-color .15s ease, background .15s ease;
+    width:100%;
+  }
+  input:focus, select:focus, textarea:focus{ border-color: var(--teal); background:#fff; }
+  input[data-mono], select[data-mono]{ font-family:'JetBrains Mono'; font-weight:600; letter-spacing:0.03em; }
+  select{ appearance:none; -webkit-appearance:none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235B655F' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position: right 10px center; padding-right:32px;
+  }
+  textarea{ resize:vertical; min-height:64px; font-family:'Inter'; }
+  .hint{ font-size:11.5px; color: var(--ink-soft); }
+
+  /* ---------- CHECKLIST GROUPS ---------- */
+  .group{ margin-bottom:14px; }
+  .group:last-child{ margin-bottom:0; }
+  .group-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:2px 2px 8px;
+  }
+  .group-head h3{
+    font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--teal);
+    margin:0; font-weight:700;
+  }
+  .group-count{ font-family:'JetBrains Mono'; font-size:11px; color:var(--ink-soft); }
+  .items{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .item{
+    display:flex; align-items:flex-start; gap:10px;
+    background: var(--surface-2); border:1.5px solid var(--line); border-radius:10px;
+    padding:10px 12px; cursor:pointer; transition: all .15s ease;
+  }
+  .item:hover{ border-color: #c3cabd; }
+  .item.checked{ background: var(--red-soft); border-color: #e3b3a8; }
+  .item input[type=checkbox]{
+    appearance:none; -webkit-appearance:none; width:19px; height:19px; flex-shrink:0;
+    border:2px solid #B7BEB2; border-radius:6px; margin-top:1px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; background:#fff;
+  }
+  .item input[type=checkbox]:checked{ background: var(--red); border-color: var(--red); }
+  .item input[type=checkbox]:checked::after{
+    content:''; width:9px; height:5px; border-left:2px solid #fff; border-bottom:2px solid #fff;
+    transform: rotate(-45deg) translate(1px,-1px);
+  }
+  .item-label{ font-size:13.5px; font-weight:500; line-height:1.3; padding-top:1px; }
+  .item-obs{
+    grid-column: 1/-1; margin-top:-2px;
+  }
+  .item-obs input{ font-size:13px; padding:8px 10px; }
+
+  @media (max-width:560px){
+    .grid{ grid-template-columns: 1fr; }
+    .items{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- SUBMIT ---------- */
+  .submit-row{ display:flex; gap:10px; align-items:center; margin-top:6px; }
+  .btn{
+    border:none; border-radius:11px; padding:14px 20px; font-weight:700; font-size:15px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: transform .12s ease, filter .12s ease; font-family:'Inter';
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn-primary{ background: var(--amber); color:#3a2900; flex:1; box-shadow: 0 8px 20px -8px rgba(242,169,0,0.6);}
+  .btn-primary:hover{ filter:brightness(1.04); }
+  .btn-primary:disabled{ opacity:0.6; cursor:not-allowed; }
+  .btn-ghost{ background: var(--surface-2); color:var(--ink-soft); border:1.5px solid var(--line); }
+
+  /* ---------- TOAST ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform: translateX(-50%) translateY(120%);
+    background: var(--teal-dark); color:#fff; padding:13px 20px; border-radius:11px;
+    font-size:14px; font-weight:600; box-shadow: var(--shadow); z-index:200;
+    display:flex; align-items:center; gap:10px; transition: transform .3s cubic-bezier(.2,.9,.3,1.2);
+    max-width: 90vw;
+  }
+  .toast.show{ transform: translateX(-50%) translateY(0); }
+  .toast.error{ background: var(--red); }
+  .toast.ok{ background: var(--green); }
+
+  /* ---------- MODAL ---------- */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(20,26,23,0.5); backdrop-filter: blur(2px);
+    display:none; align-items:flex-end; justify-content:center; z-index:150;
+  }
+  .modal-bg.open{ display:flex; }
+  @media (min-width:640px){ .modal-bg{ align-items:center; } }
+  .modal{
+    background:#fff; width:100%; max-width:520px; max-height:86vh; overflow:auto;
+    border-radius: 18px 18px 0 0; padding:20px; box-shadow: var(--shadow);
+  }
+  @media (min-width:640px){ .modal{ border-radius:18px; } }
+  .modal h2{ font-family:'Bebas Neue'; font-size:22px; color:var(--teal-dark); margin:0 0 4px; letter-spacing:0.3px;}
+  .modal .sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .mtabs{ display:flex; gap:6px; margin-bottom:14px; }
+  .mtab{ padding:7px 12px; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer;
+    background:var(--surface-2); color:var(--ink-soft); border:1.5px solid var(--line); }
+  .mtab.active{ background:var(--teal-dark); color:#fff; border-color:var(--teal-dark); }
+  .list-row{
+    display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line);
+  }
+  .list-row input{ flex:1; }
+  .list-row .x{ width:30px;height:30px;border-radius:50%; border:none; background:var(--red-soft);
+    color:var(--red); font-weight:700; cursor:pointer; flex-shrink:0; }
+  .add-row{ display:flex; gap:8px; margin-top:12px; }
+  .add-row input{ flex:1; }
+  .add-row button{ background:var(--teal-dark); color:#fff; border:none; border-radius:9px; padding:0 16px; font-weight:700; cursor:pointer;}
+  .close-x{ position:absolute; top:14px; right:14px; }
+  .modal{ position:relative; }
+  .webhook-box{ background:var(--surface-2); border:1.5px dashed var(--line); border-radius:10px; padding:12px; margin-top:6px; }
+  .webhook-box code{ font-family:'JetBrains Mono'; font-size:11.5px; }
+  .status-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .status-dot.on{ background: var(--green); }
+  .status-dot.off{ background: var(--red); }
+
+  .footer-note{ text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:22px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">S7</div>
+      <div class="brand-text">
+        <h1>Checklist Frota</h1>
+        <p>Seven &middot; Vistoria de veículos</p>
+      </div>
+    </div>
+    <div class="icon-btn" id="settingsBtn" title="Gerenciar veículos, usuários e integração">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </div>
+  </div>
+
+  <div class="gauge-card">
+    <div class="gauge">
+      <svg viewBox="0 0 74 74">
+        <circle class="gauge-track" cx="37" cy="37" r="30" />
+        <circle class="gauge-fill" id="gaugeFill" cx="37" cy="37" r="30" stroke-dasharray="188.5" stroke-dashoffset="188.5" />
+      </svg>
+      <div class="gauge-num" id="gaugeNum">0%</div>
+    </div>
+    <div class="gauge-info">
+      <div class="label">Progresso da vistoria</div>
+      <div class="val" id="gaugeVal">0 de 0 itens conferidos</div>
+      <div class="sub" id="gaugeSub">Preencha os dados e marque os itens verificados.</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-type="diario">Checklist Diário</div>
+    <div class="tab" data-type="semanal">Checklist Semanal</div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title"><span class="n">1</span>Dados da vistoria</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="fData" data-mono>
+      </div>
+      <div class="field">
+        <label>KM</label>
+        <input type="number" id="fKm" placeholder="Ex: 84520" data-mono inputmode="numeric">
+      </div>
+      <div class="field full">
+        <label>Veículo / Placa</label>
+        <select id="fPlaca" data-mono></select>
+      </div>
+      <div class="field">
+        <label>Técnico responsável</label>
+        <select id="fResponsavel"></select>
+      </div>
+      <div class="field">
+        <label>Técnico revisor <span style="text-transform:none;font-weight:500;">(opcional)</span></label>
+        <select id="fRevisor"><option value="">—</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title"><span class="n">2</span><span id="checklistTitle">Itens do checklist diário</span></h2>
+    <p class="hint" style="margin:-6px 0 14px;">Marque apenas os itens que apresentaram problema. Os demais são considerados OK.</p>
+    <div id="groupsWrap"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title"><span class="n">3</span>Observações gerais</h2>
+    <textarea id="fObs" placeholder="Detalhes adicionais sobre o veículo ou itens marcados..."></textarea>
+  </div>
+
+  <div class="submit-row">
+    <button class="btn btn-ghost" id="clearBtn">Limpar</button>
+    <button class="btn btn-primary" id="submitBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      Enviar checklist
+    </button>
+  </div>
+
+  <div class="footer-note">Os dados são enviados para a planilha do Google Sheets configurada pela equipe.<br>Toque na engrenagem acima para gerenciar veículos, usuários e a integração.</div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="icon-btn close-x" id="closeModal" style="width:32px;height:32px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Gerenciar</h2>
+    <div class="sub">Cadastre, edite ou remova veículos e usuários. As mudanças ficam disponíveis para toda a equipe.</div>
+    <div class="mtabs">
+      <div class="mtab active" data-mtab="veiculos">Veículos</div>
+      <div class="mtab" data-mtab="usuarios">Usuários</div>
+      <div class="mtab" data-mtab="integracao">Integração</div>
+    </div>
+
+    <div id="mVeiculos">
+      <div id="veiculosList"></div>
+      <div class="add-row">
+        <input id="newPlaca" placeholder="Placa (ex: ABC1D23)" data-mono style="text-transform:uppercase;">
+        <input id="newModelo" placeholder="Veículo (ex: Fiorino)">
+        <button id="addVeiculo">+</button>
+      </div>
+    </div>
+
+    <div id="mUsuarios" style="display:none;">
+      <div id="usuariosList"></div>
+      <div class="add-row">
+        <input id="newUsuario" placeholder="Nome do usuário">
+        <button id="addUsuario">+</button>
+      </div>
+    </div>
+
+    <div id="mIntegracao" style="display:none;">
+      <div class="field">
+        <label>URL do Google Apps Script (Web App)</label>
+        <input id="webhookUrl" placeholder="https://script.google.com/macros/s/.../exec" data-mono>
+      </div>
+      <div class="webhook-box">
+        <div style="margin-bottom:8px;"><span class="status-dot" id="whDot"></span><strong id="whStatus" style="font-size:13px;">Não configurado</strong></div>
+        Cole aqui a URL do Web App do Google Apps Script publicado na planilha da equipe. Cada envio do checklist grava uma nova linha automaticamente. Veja o arquivo <code>Code.gs</code> com o passo a passo de instalação.
+      </div>
+      <button class="btn btn-ghost" id="saveWebhook" style="margin-top:12px;width:100%;">Salvar URL</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+
+  const DEFAULT_VEICULOS = [
+    {placa:'UIZ5D96', modelo:'Fiorino'},
+    {placa:'REV7D25', modelo:'Fiorino'},
+    {placa:'SSG4B48', modelo:'Van Scudo'},
+    {placa:'REK7E44', modelo:'Gol'},
+    {placa:'PBR2851', modelo:'Gol'},
+  ];
+  const DEFAULT_USUARIOS = [
+    'Denis Soares','Ilan Cruz','Luiz Sousa','Paulo Gomes','Diego Batista',
+    'Marcos Ferreira','Davi Reis','Alteir Souza','Sérgio Éber','Marcone Pereira','Leandro'
+  ];
+
+  const CHECKLIST = {
+    diario: {
+      title: 'Itens do checklist diário',
+      groups: [
+        { name:'Painel & Fluidos', items:['Nível Combustível','Nível água Arrefecimento','Indicadores Painel'] },
+        { name:'Iluminação', items:['Luz Freio Esq.','Luz Freio Dir.','Pisca Esq.','Pisca Dir.','Farol Esq.','Farol Dir.','Lanterna Dir.','Lanterna Esq.','Luz Placa'] },
+        { name:'Conforto & Acessórios', items:['Ar. Condicionado','Limpeza Interna','Carregador Celular','Suporte p/ Celular','Cabo p/ Celular'] },
+      ]
+    },
+    semanal: {
+      title: 'Itens do checklist semanal',
+      groups: [
+        { name:'Iluminação', items:['Luz Freio Esq.','Luz Freio Dir.','Pisca Esq.','Pisca Dir.','Farol Esq.','Farol Dir.','Lanterna Dir.','Lanterna Esq.','Luz Placa','Pisca Alerta'] },
+        { name:'Mecânica & Fluidos', items:['Nível Óleo Motor','Nível Óleo Hidráulico','Limp. Para brisa','Para brisa Dianteiro','Nível Água Para brisa','Nível água Arrefecimento','Freio de mão','Pneus D/T'] },
+        { name:'Visão & Estrutura', items:['Retrovisor Interno','Retrovisor Dir.','Retrovisor Esq.','Vidros Laterais','Vidros Elétricos','Quebra Sol','Sensor de ré','Antena'] },
+        { name:'Segurança & Documentação', items:['Triangulo','Estepe','Chave de Roda','Macaco','Documento Veicular','Cintos de Segurança','Chave Ignição','Travamento das portas','Indicadores Painel'] },
+        { name:'Conforto & Limpeza', items:['Buzina','Ar. Condicionado','Rádio','Estofamento Bancos','Limpeza Externa','Limpeza Interna','Carregador Celular','Cabo Celular','Suporte p/ Celular','Tapetes'] },
+      ]
+    }
+  };
+
+  let veiculos = DEFAULT_VEICULOS.slice();
+  let usuarios = DEFAULT_USUARIOS.slice();
+  let webhookUrl = '';
+  let currentType = 'diario';
+  let checkedState = {}; // { itemName: {checked:bool, obs:string} }
+
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- STORAGE ----------
+  async function loadAll(){
+    try{
+      const v = await window.storage.get('frota:vehicles', true);
+      if(v && v.value) veiculos = JSON.parse(v.value);
+    }catch(e){}
+    try{
+      const u = await window.storage.get('frota:users', true);
+      if(u && u.value) usuarios = JSON.parse(u.value);
+    }catch(e){}
+    try{
+      const w = await window.storage.get('frota:webhook', true);
+      if(w && w.value) webhookUrl = w.value;
+    }catch(e){}
+    renderVeiculoSelect();
+    renderUsuarioSelects();
+    renderVeiculosList();
+    renderUsuariosList();
+    renderWebhook();
+  }
+  async function saveVeiculos(){
+    await window.storage.set('frota:vehicles', JSON.stringify(veiculos), true);
+  }
+  async function saveUsuarios(){
+    await window.storage.set('frota:users', JSON.stringify(usuarios), true);
+  }
+  async function saveWebhookUrl(){
+    await window.storage.set('frota:webhook', webhookUrl, true);
+  }
+
+  // ---------- RENDER: SELECTS ----------
+  function renderVeiculoSelect(){
+    const sel = $('fPlaca');
+    const cur = sel.value;
+    sel.innerHTML = veiculos.map(v => `<option value="${v.placa}">${v.placa} — ${v.modelo}</option>`).join('');
+    if(cur) sel.value = cur;
+  }
+  function renderUsuarioSelects(){
+    const opts = usuarios.map(u => `<option value="${u}">${u}</option>`).join('');
+    const r = $('fResponsavel'), rv = $('fRevisor');
+    const curR = r.value, curV = rv.value;
+    r.innerHTML = opts;
+    rv.innerHTML = '<option value="">—</option>' + opts;
+    if(curR) r.value = curR;
+    if(curV) rv.value = curV;
+  }
+
+  // ---------- RENDER: CHECKLIST ----------
+  function renderChecklist(){
+    const data = CHECKLIST[currentType];
+    $('checklistTitle').textContent = data.title;
+    const wrap = $('groupsWrap');
+    wrap.innerHTML = '';
+    checkedState = {};
+    data.groups.forEach(group => {
+      const g = document.createElement('div');
+      g.className = 'group';
+      g.innerHTML = `<div class="group-head"><h3>${group.name}</h3><span class="group-count">${group.items.length} itens</span></div>
+        <div class="items"></div>`;
+      const itemsWrap = g.querySelector('.items');
+      group.items.forEach((name, idx) => {
+        const key = group.name + '::' + name + '::' + idx;
+        checkedState[key] = { label: name, checked:false, obs:'' };
+        const row = document.createElement('label');
+        row.className = 'item';
+        row.dataset.key = key;
+        row.innerHTML = `<input type="checkbox">
+          <span class="item-label">${name}</span>`;
+        const cb = row.querySelector('input');
+        cb.addEventListener('change', () => {
+          checkedState[key].checked = cb.checked;
+          row.classList.toggle('checked', cb.checked);
+          toggleObsField(row, key, cb.checked);
+          updateGauge();
+        });
+        itemsWrap.appendChild(row);
+      });
+      wrap.appendChild(g);
+    });
+    updateGauge();
+  }
+
+  function toggleObsField(row, key, show){
+    let obs = row.parentElement.querySelector(`.item-obs[data-key="${key}"]`);
+    if(show){
+      if(!obs){
+        obs = document.createElement('div');
+        obs.className = 'item item-obs';
+        obs.dataset.key = key;
+        obs.style.cursor = 'default';
+        obs.innerHTML = `<input type="text" placeholder="Descreva o problema (opcional)">`;
+        obs.querySelector('input').addEventListener('input', (e) => {
+          checkedState[key].obs = e.target.value;
+        });
+        row.insertAdjacentElement('afterend', obs);
+      }
+    } else if(obs){
+      obs.remove();
+    }
+  }
+
+  function updateGauge(){
+    const vals = Object.values(checkedState);
+    const total = vals.length;
+    const marked = vals.filter(v => v.checked).length;
+    const pct = total ? Math.round((marked/total)*100) : 0;
+    const circumference = 188.5;
+    $('gaugeFill').style.strokeDashoffset = circumference - (circumference * (marked ? 100 : 0) / 100 * 0); // placeholder, real logic below
+    // Progress here represents "itens revisados" — since unchecked = OK by default,
+    // we show proportion of items flagged as reference info instead of forcing check-all.
+    $('gaugeNum').textContent = pct + '%';
+    $('gaugeVal').textContent = marked + ' de ' + total + ' itens marcados com problema';
+    $('gaugeFill').setAttribute('stroke-dasharray', circumference);
+    $('gaugeFill').style.strokeDashoffset = circumference - (circumference * pct / 100);
+    $('gaugeSub').textContent = marked === 0
+      ? 'Nenhum item marcado até agora — tudo OK.'
+      : (marked + ' item(ns) precisam de atenção.');
+    $('gaugeFill').style.stroke = marked > 0 ? 'var(--red)' : 'var(--green)';
+  }
+
+  // ---------- TABS ----------
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentType = tab.dataset.type;
+      renderChecklist();
+    });
+  });
+
+  // ---------- MODAL ----------
+  $('settingsBtn').addEventListener('click', () => $('modalBg').classList.add('open'));
+  $('closeModal').addEventListener('click', () => $('modalBg').classList.remove('open'));
+  $('modalBg').addEventListener('click', (e) => { if(e.target === $('modalBg')) $('modalBg').classList.remove('open'); });
+
+  document.querySelectorAll('.mtab').forEach(mt => {
+    mt.addEventListener('click', () => {
+      document.querySelectorAll('.mtab').forEach(m => m.classList.remove('active'));
+      mt.classList.add('active');
+      $('mVeiculos').style.display = mt.dataset.mtab === 'veiculos' ? 'block' : 'none';
+      $('mUsuarios').style.display = mt.dataset.mtab === 'usuarios' ? 'block' : 'none';
+      $('mIntegracao').style.display = mt.dataset.mtab === 'integracao' ? 'block' : 'none';
+    });
+  });
+
+  function renderVeiculosList(){
+    const wrap = $('veiculosList');
+    wrap.innerHTML = '';
+    veiculos.forEach((v, i) => {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+      row.innerHTML = `<input data-mono value="${v.placa}" data-field="placa">
+        <input value="${v.modelo}" data-field="modelo">
+        <button class="x">✕</button>`;
+      const [placaInput, modeloInput] = row.querySelectorAll('input');
+      placaInput.addEventListener('change', () => { veiculos[i].placa = placaInput.value.toUpperCase().trim(); saveVeiculos(); renderVeiculoSelect(); });
+      modeloInput.addEventListener('change', () => { veiculos[i].modelo = modeloInput.value.trim(); saveVeiculos(); renderVeiculoSelect(); });
+      row.querySelector('.x').addEventListener('click', () => { veiculos.splice(i,1); saveVeiculos(); renderVeiculosList(); renderVeiculoSelect(); });
+      wrap.appendChild(row);
+    });
+  }
+  $('addVeiculo').addEventListener('click', () => {
+    const p = $('newPlaca').value.toUpperCase().trim();
+    const m = $('newModelo').value.trim();
+    if(!p || !m){ showToast('Preencha placa e veículo', 'error'); return; }
+    veiculos.push({placa:p, modelo:m});
+    $('newPlaca').value=''; $('newModelo').value='';
+    saveVeiculos(); renderVeiculosList(); renderVeiculoSelect();
+    showToast('Veículo cadastrado', 'ok');
+  });
+
+  function renderUsuariosList(){
+    const wrap = $('usuariosList');
+    wrap.innerHTML = '';
+    usuarios.forEach((u, i) => {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+      row.innerHTML = `<input value="${u}"><button class="x">✕</button>`;
+      const input = row.querySelector('input');
+      input.addEventListener('change', () => { usuarios[i] = input.value.trim(); saveUsuarios(); renderUsuarioSelects(); });
+      row.querySelector('.x').addEventListener('click', () => { usuarios.splice(i,1); saveUsuarios(); renderUsuariosList(); renderUsuarioSelects(); });
+      wrap.appendChild(row);
+    });
+  }
+  $('addUsuario').addEventListener('click', () => {
+    const n = $('newUsuario').value.trim();
+    if(!n){ showToast('Digite um nome', 'error'); return; }
+    usuarios.push(n);
+    $('newUsuario').value='';
+    saveUsuarios(); renderUsuariosList(); renderUsuarioSelects();
+    showToast('Usuário cadastrado', 'ok');
+  });
+
+  function renderWebhook(){
+    $('webhookUrl').value = webhookUrl;
+    const ok = !!webhookUrl;
+    $('whDot').className = 'status-dot ' + (ok ? 'on' : 'off');
+    $('whStatus').textContent = ok ? 'Conectado à planilha' : 'Não configurado';
+  }
+  $('saveWebhook').addEventListener('click', async () => {
+    webhookUrl = $('webhookUrl').value.trim();
+    await saveWebhookUrl();
+    renderWebhook();
+    showToast('URL de integração salva', 'ok');
+  });
+
+  // ---------- TOAST ----------
+  let toastTimer;
+  function showToast(msg, type){
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  // ---------- SUBMIT ----------
+  $('clearBtn').addEventListener('click', () => {
+    renderChecklist();
+    $('fKm').value = '';
+    $('fObs').value = '';
+    showToast('Checklist limpo');
+  });
+
+  $('submitBtn').addEventListener('click', async () => {
+    const placa = $('fPlaca').value;
+    const veiculo = (veiculos.find(v => v.placa === placa) || {}).modelo || '';
+    const km = $('fKm').value;
+    const responsavel = $('fResponsavel').value;
+    const revisor = $('fRevisor').value;
+    const data = $('fData').value;
+    const obsGerais = $('fObs').value;
+
+    if(!placa || !responsavel || !data || !km){
+      showToast('Preencha data, KM, placa e responsável', 'error');
+      return;
+    }
+
+    const problemas = Object.values(checkedState).filter(v => v.checked);
+    const itensProblemaTexto = problemas.map(p => p.obs ? `${p.label} (${p.obs})` : p.label).join('; ');
+
+    const payload = {
+      data, placa, veiculo, km, responsavel, revisor,
+      tipo: currentType === 'diario' ? 'Diário' : 'Semanal',
+      itensProblema: itensProblemaTexto || 'Nenhum',
+      totalItens: Object.keys(checkedState).length,
+      totalProblemas: problemas.length,
+      observacoes: obsGerais,
+      timestamp: new Date().toISOString()
+    };
+
+    const btn = $('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try{
+      if(webhookUrl){
+        await fetch(webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+      }
+      // backup local (visível para a equipe) mesmo com a integração configurada
+      const key = 'frota:sub:' + Date.now();
+      await window.storage.set(key, JSON.stringify(payload), true);
+
+      showToast(webhookUrl ? 'Checklist enviado para a planilha ✓' : 'Checklist salvo (configure a integração para enviar ao Sheets)', 'ok');
+      renderChecklist();
+      $('fKm').value = '';
+      $('fObs').value = '';
+    }catch(err){
+      showToast('Falha ao enviar. Tente novamente.', 'error');
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg> Enviar checklist`;
+    }
+  });
+
+  // ---------- INIT ----------
+  function initDate(){
+    const d = new Date();
+    const iso = d.toISOString().slice(0,10);
+    $('fData').value = iso;
+  }
+
+  initDate();
+  renderChecklist();
+  loadAll();
+
+})();
+</script>
+</body>
+</html>
